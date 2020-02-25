@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-controller
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pod-what-crashes
+  namespace: my-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-what-crashes-role
+  namespace: my-controller
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pod-what-crashes-access
+  namespace: my-controller
+subjects:
+- kind: ServiceAccount
+  name: pod-what-crashes
+  namespace: my-controller
+roleRef:
+  kind: ClusterRole
+  name: pod-what-crashes-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-what-crashes
+  namespace: my-controller
+  labels:
+    k8s-app: pod-what-crashes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: pod-what-crashes
+  template:
+    metadata:
+      labels:
+        k8s-app: pod-what-crashes
+    spec:
+      serviceAccountName: pod-what-crashes
+      containers:
+      - name: pod-what-crashes
+        image: localhost/pod-what-crashes:testing
+        imagePullPolicy: Never
+        resources:
+          limits:
+            cpu: 200m
+            memory: 300Mi
+          requests:
+            cpu: 150m
+            memory: 250Mi
